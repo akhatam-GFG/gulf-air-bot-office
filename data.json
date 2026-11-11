@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-11-11T12:50:00+03:00",
+  "timezone": "Asia/Baghdad (UTC+3)",
+  "source": "Summarised from each bot's own chat history. Scrubbed for publishing: no PNRs, routes, booking refs, passenger names, booking error codes, emails, URLs or other personal details.",
+  "bots": [
+    {
+      "id": "1065fcb2-0189-4422-8905-7531d65b70c8",
+      "name": "Release Presentation Bot",
+      "short": "RPB",
+      "color": "#B4975A",
+      "role": "Builds executive-level release decks for the Gulf Air mobile app from Ali's previous-release PowerPoint template, one feature per slide.",
+      "createdAt": "2026-11-11T11:32:00+03:00",
+      "lastActive": "2026-11-11T12:36:00+03:00",
+      "status": "idle",
+      "statusText": "Delivered the Mobile App Update v10.6 deck",
+      "latest": "Your v10.6 release deck is ready: 10 slides, text updated, screenshots left for you to swap.",
+      "activity": [
+        {
+          "time": "2026-11-11T11:32:00+03:00",
+          "summary": "First run: greeted Ali and asked what release help he needs."
+        },
+        {
+          "time": "2026-11-11T12:00:00+03:00",
+          "summary": "Ali asked for release decks from his template for top management; received the 10.6 feature list."
+        },
+        {
+          "time": "2026-11-11T12:01:00+03:00",
+          "summary": "Proposed a 10-slide outline; Ali chose PowerPoint (.pptx) as the output."
+        },
+        {
+          "time": "2026-11-11T12:07:00+03:00",
+          "summary": "Ali confirmed version 10.6 and that he will add the screenshots himself."
+        },
+        {
+          "time": "2026-11-11T12:08:00+03:00",
+          "summary": "Storyboard of all 10 slides shared for approval."
+        },
+        {
+          "time": "2026-11-11T12:31:00+03:00",
+          "summary": "Ali approved: replace the text only, keep existing screenshots."
+        },
+        {
+          "time": "2026-11-11T12:32:00+03:00",
+          "summary": "Slides 1-3 done: title v10.6, Lounge Location Display, Language & Country Settings."
+        },
+        {
+          "time": "2026-11-11T12:33:00+03:00",
+          "summary": "Slides 4-6 done: Offline Mode, Flight Cancellation Experience, Dark Mode."
+        },
+        {
+          "time": "2026-11-11T12:34:00+03:00",
+          "summary": "Slides 7-9 done: Bassinet Seat Confirmation, Upgrade Bidding, Falconflyer Benefits."
+        },
+        {
+          "time": "2026-11-11T12:36:00+03:00",
+          "summary": "Final check passed; sent the v10.6 release deck to Ali."
+        }
+      ],
+      "routines": [],
+      "routinesNote": "No routines found in this bot's transcript."
+    },
+    {
+      "id": "9e6f2ec7-40ce-4fdd-a6a9-72ee467f62d9",
+      "name": "BMS Ticketing Failed Bot",
+      "short": "BMS",
+      "color": "#8A8D91",
+      "role": "Watches the booking system for bookings tagged as ticketing failures and sends Ali hourly alerts and a morning summary.",
+      "createdAt": "2026-11-11T10:35:00+03:00",
+      "lastActive": "2026-11-11T12:03:00+03:00",
+      "status": "paused",
+      "statusText": "Paused by Ali until further notice",
+      "latest": "Paused the hourly alerts and the morning report until further notice.",
+      "activity": [
+        {
+          "time": "2026-11-11T10:35:00+03:00",
+          "summary": "Got its assignment: alert on ticketing failures and send a daily morning summary."
+        },
+        {
+          "time": "2026-11-11T10:36:00+03:00",
+          "summary": "Stored the booking-system login securely and connected email."
+        },
+        {
+          "time": "2026-11-11T10:38:00+03:00",
+          "summary": "Sign-in needed help; Ali signed in and handed the session back."
+        },
+        {
+          "time": "2026-11-11T10:49:00+03:00",
+          "summary": "Learned how to filter bookings by tag and booking date."
+        },
+        {
+          "time": "2026-11-11T10:53:00+03:00",
+          "summary": "Found the first ticketing failure of the day and read its technical error."
+        },
+        {
+          "time": "2026-11-11T10:54:00+03:00",
+          "summary": "Created two routines: an hourly alert and a morning report."
+        },
+        {
+          "time": "2026-11-11T10:58:00+03:00",
+          "summary": "Sent a ticketing-failure alert (1 new failure)."
+        },
+        {
+          "time": "2026-11-11T11:00:00+03:00",
+          "summary": "Trimmed the alert emails to show less detail, as Ali asked."
+        },
+        {
+          "time": "2026-11-11T12:02:00+03:00",
+          "summary": "Sent a ticketing-failure alert (1 new failure)."
+        },
+        {
+          "time": "2026-11-11T12:03:00+03:00",
+          "summary": "Ali asked it to stop; both routines paused until further notice."
+        }
+      ],
+      "routines": [
+        {
+          "name": "Ticketing-failure alert",
+          "schedule": "Every hour, 8:00 AM - 10:00 PM (Asia/Baghdad)",
+          "state": "paused",
+          "note": "Emails Ali about new ticketing failures."
+        },
+        {
+          "name": "Ticketing-failure morning report",
+          "schedule": "Every day around 8:00 AM (Asia/Baghdad)",
+          "state": "paused",
+          "note": "Emails one summary of the previous day's failures."
+        }
+      ],
+      "routinesNote": ""
+    }
+  ]
+}

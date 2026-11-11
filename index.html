@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bot Office · Bahrain International Airport</title>
+<style>
+  :root{--gold:#B4975A;--grey:#5f6368;--dark:#1d2126;--panel:#22272e;--txt:#eef0f2;--muted:#9aa1a9}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0e1114;color:var(--txt);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+  #app{position:fixed;inset:0;display:flex}
+  #stage{position:relative;flex:1;min-width:0}
+  #stage canvas{display:block}
+  header{position:absolute;top:0;left:0;right:0;padding:12px 18px;display:flex;align-items:center;gap:14px;
+    background:rgba(14,17,20,.88);border-bottom:1px solid rgba(180,151,90,.5);pointer-events:none}
+  header .mark{width:34px;height:34px;border-radius:50%;background:var(--gold);display:grid;place-items:center;color:#1d2126;font-weight:800}
+  header h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.3px}
+  header .sub{font-size:12px;color:var(--muted)}
+  header .clock{margin-left:auto;text-align:right;font-variant-numeric:tabular-nums}
+  header .clock b{font-size:20px;color:var(--gold)}
+  #legend{position:absolute;left:14px;bottom:14px;font-size:11px;color:var(--muted);background:rgba(20,24,28,.75);padding:8px 10px;border-radius:8px;max-width:420px;line-height:1.45}
+  aside{width:360px;max-width:42vw;background:var(--panel);border-left:2px solid var(--gold);display:flex;flex-direction:column}
+  aside .head{padding:14px 16px;border-bottom:1px solid #333a42}
+  aside .head h2{margin:0;font-size:13px;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+  aside .head .meta{font-size:11px;color:var(--muted);margin-top:4px}
+  #fids{font-family:"Consolas","Courier New",monospace;font-size:12px;background:#111417;margin:10px 12px;border-radius:6px;padding:6px 8px}
+  #fids .row{display:grid;grid-template-columns:52px 1fr 76px;gap:6px;padding:5px 2px;border-bottom:1px dashed #2b3036;cursor:pointer}
+  #fids .row:last-child{border-bottom:none}
+  #fids .row.h{color:var(--gold);cursor:default;font-size:10px;letter-spacing:1px}
+  #fids .row:not(.h):hover{background:#1b2025}
+  .st{font-weight:700;text-transform:uppercase;font-size:11px}
+  .st.active{color:#5fd38a}.st.idle{color:#e6c36a}.st.paused{color:#ef7f6b}.st.unknown{color:#9aa1a9}
+  #detail{flex:1;overflow:auto;padding:4px 16px 20px}
+  #detail h3{margin:12px 0 4px;font-size:16px}
+  #detail .role{font-size:12.5px;color:#c9ced4;line-height:1.45}
+  #detail .sec{margin-top:14px;font-size:11px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase}
+  .tl{list-style:none;margin:6px 0 0;padding:0 0 0 12px;border-left:2px solid #3a414a}
+  .tl li{position:relative;margin:0 0 10px;font-size:12.5px;line-height:1.4}
+  .tl li::before{content:"";position:absolute;left:-18px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--gold)}
+  .tl li:first-child::before{box-shadow:0 0 0 3px rgba(180,151,90,.35)}
+  .tl time{display:block;color:var(--muted);font-size:11px}
+  .rt{background:#1a1e23;border:1px solid #333a42;border-radius:6px;padding:8px 10px;margin-top:6px;font-size:12px}
+  .rt b{display:block;margin-bottom:2px}
+  .rt .s{color:var(--muted)}
+  .pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:9px;margin-left:6px;vertical-align:1px}
+  .pill.paused{background:#4a2a24;color:#ef9f8f}.pill.enabled,.pill.active{background:#21412d;color:#7fe0a2}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+  button{background:#2d343c;color:var(--txt);border:1px solid #3d4550;border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer}
+  button:hover{border-color:var(--gold)}
+  .empty{color:var(--muted);font-size:12px;font-style:italic}
+  @media (max-width:760px){#app{flex-direction:column}aside{width:100%;max-width:none;height:45vh;border-left:none;border-top:2px solid var(--gold)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <header>
+      <div class="mark">GF</div>
+      <div><h1>Bot Office · Terminal, Bahrain International Airport</h1>
+        <div class="sub">Ali's bots at their gates · drag to orbit, scroll to zoom, click a bot</div></div>
+      <div class="clock"><b id="clock">--:--</b><div class="sub">Bahrain local · Baghdad time (UTC+3)</div></div>
+    </header>
+    <div id="legend">Speech bubbles, the departures board and the panel show each bot's <b>real</b> latest activity from data.json. Walking around the terminal is just ambient animation.</div>
+  </div>
+  <aside>
+    <div class="head"><h2>Departures · Bot activity</h2><div class="meta" id="meta"></div></div>
+    <div id="fids"></div>
+    <div id="detail"></div>
+  </aside>
+</div>
+
+<!-- BOT_DATA_START: inline fallback copy of data.json (rewritten by embed.py) -->
+<script id="bot-data" type="application/json">
+{
+ "generatedAt": "2026-11-11T12:50:00+03:00",
+ "timezone": "Asia/Baghdad (UTC+3)",
+ "source": "Summarised from each bot's own chat history. Scrubbed for publishing: no PNRs, routes, booking refs, passenger names, booking error codes, emails, URLs or other personal details.",
+ "bots": [
+  {
+   "id": "1065fcb2-0189-4422-8905-7531d65b70c8",
+   "name": "Release Presentation Bot",
+   "short": "RPB",
+   "color": "#B4975A",
+   "role": "Builds executive-level release decks for the Gulf Air mobile app from Ali's previous-release PowerPoint template, one feature per slide.",
+   "createdAt": "2026-11-11T11:32:00+03:00",
+   "lastActive": "2026-11-11T12:36:00+03:00",
+   "status": "idle",
+   "statusText": "Delivered the Mobile App Update v10.6 deck",
+   "latest": "Your v10.6 release deck is ready: 10 slides, text updated, screenshots left for you to swap.",
+   "activity": [
+    {
+     "time": "2026-11-11T11:32:00+03:00",
+     "summary": "First run: greeted Ali and asked what release help he needs."
+    },
+    {
+     "time": "2026-11-11T12:00:00+03:00",
+     "summary": "Ali asked for release decks from his template for top management; received the 10.6 feature list."
+    },
+    {
+     "time": "2026-11-11T12:01:00+03:00",
+     "summary": "Proposed a 10-slide outline; Ali chose PowerPoint (.pptx) as the output."
+    },
+    {
+     "time": "2026-11-11T12:07:00+03:00",
+     "summary": "Ali confirmed version 10.6 and that he will add the screenshots himself."
+    },
+    {
+     "time": "2026-11-11T12:08:00+03:00",
+     "summary": "Storyboard of all 10 slides shared for approval."
+    },
+    {
+     "time": "2026-11-11T12:31:00+03:00",
+     "summary": "Ali approved: replace the text only, keep existing screenshots."
+    },
+    {
+     "time": "2026-11-11T12:32:00+03:00",
+     "summary": "Slides 1-3 done: title v10.6, Lounge Location Display, Language & Country Settings."
+    },
+    {
+     "time": "2026-11-11T12:33:00+03:00",
+     "summary": "Slides 4-6 done: Offline Mode, Flight Cancellation Experience, Dark Mode."
+    },
+    {
+     "time": "2026-11-11T12:34:00+03:00",
+     "summary": "Slides 7-9 done: Bassinet Seat Confirmation, Upgrade Bidding, Falconflyer Benefits."
+    },
+    {
+     "time": "2026-11-11T12:36:00+03:00",
+     "summary": "Final check passed; sent the v10.6 release deck to Ali."
+    }
+   ],
+   "routines": [],
+   "routinesNote": "No routines found in this bot's transcript."
+  },
+  {
+   "id": "9e6f2ec7-40ce-4fdd-a6a9-72ee467f62d9",
+   "name": "BMS Ticketing Failed Bot",
+   "short": "BMS",
+   "color": "#8A8D91",
+   "role": "Watches the booking system for bookings tagged as ticketing failures and sends Ali hourly alerts and a morning summary.",
+   "createdAt": "2026-11-11T10:35:00+03:00",
+   "lastActive": "2026-11-11T12:03:00+03:00",
+   "status": "paused",
+   "statusText": "Paused by Ali until further notice",
+   "latest": "Paused the hourly alerts and the morning report until further notice.",
+   "activity": [
+    {
+     "time": "2026-11-11T10:35:00+03:00",
+     "summary": "Got its assignment: alert on ticketing failures and send a daily morning summary."
+    },
+    {
+     "time": "2026-11-11T10:36:00+03:00",
+     "summary": "Stored the booking-system login securely and connected email."
+    },
+    {
+     "time": "2026-11-11T10:38:00+03:00",
+     "summary": "Sign-in needed help; Ali signed in and handed the session back."
+    },
+    {
+     "time": "2026-11-11T10:49:00+03:00",
+     "summary": "Learned how to filter bookings by tag and booking date."
+    },
+    {
+     "time": "2026-11-11T10:53:00+03:00",
+     "summary": "Found the first ticketing failure of the day and read its technical error."
+    },
+    {
+     "time": "2026-11-11T10:54:00+03:00",
+     "summary": "Created two routines: an hourly alert and a morning report."
+    },
+    {
+     "time": "2026-11-11T10:58:00+03:00",
+     "summary": "Sent a ticketing-failure alert (1 new failure)."
+    },
+    {
+     "time": "2026-11-11T11:00:00+03:00",
+     "summary": "Trimmed the alert emails to show less detail, as Ali asked."
+    },
+    {
+     "time": "2026-11-11T12:02:00+03:00",
+     "summary": "Sent a ticketing-failure alert (1 new failure)."
+    },
+    {
+     "time": "2026-11-11T12:03:00+03:00",
+     "summary": "Ali asked it to stop; both routines paused until further notice."
+    }
+   ],
+   "routines": [
+    {
+     "name": "Ticketing-failure alert",
+     "schedule": "Every hour, 8:00 AM - 10:00 PM (Asia/Baghdad)",
+     "state": "paused",
+     "note": "Emails Ali about new ticketing failures."
+    },
+    {
+     "name": "Ticketing-failure morning report",
+     "schedule": "Every day around 8:00 AM (Asia/Baghdad)",
+     "state": "paused",
+     "note": "Emails one summary of the previous day's failures."
+    }
+   ],
+   "routinesNote": ""
+  }
+ ]
+}
+</script>
+<!-- BOT_DATA_END -->
+
+<script src="lib/three.min.js"></script>
+<script src="lib/OrbitControls.js"></script>
+<script>
+(function(){
+'use strict';
+const TZ='Asia/Baghdad';
+const GOLD=0xB4975A, GREY=0x8A8D91;
+const fmtTime=iso=>{try{return new Date(iso).toLocaleTimeString('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit'})}catch(e){return '--:--'}};
+const fmtDate=iso=>{try{return new Date(iso).toLocaleString('en-GB',{timeZone:TZ,day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let DATA=null;
+try{DATA=JSON.parse(document.getElementById('bot-data').textContent)}catch(e){DATA={bots:[]}}
+
+// ---------- status derivation ----------
+function deriveStatus(b){
+  // status comes from data.json (derived from the latest real activity);
+  // an 'active' bot with no activity for 30+ minutes is shown as idle.
+  let s=(b.status||'').toLowerCase();
+  const mins=b.lastActive?(Date.now()-new Date(b.lastActive).getTime())/60000:Infinity;
+  if(!s) s=mins<10?'active':(b.lastActive?'idle':'unknown');
+  if(s==='active'&&mins>30) s='idle';
+  return s;
+}
+
+// ---------- three.js scene ----------
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+stage.appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0xf2c38b);
+scene.fog=new THREE.Fog(0xf2c38b,70,150);
+const camera=new THREE.PerspectiveCamera(48,1,0.1,400);
+camera.position.set(9,12,19);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.target.set(0,1.5,-3);
+controls.enableDamping=true;controls.maxPolarAngle=Math.PI*0.48;controls.minDistance=6;controls.maxDistance=70;
+
+scene.add(new THREE.HemisphereLight(0xfff3de,0x6b5a45,0.75));
+const sun=new THREE.DirectionalLight(0xffe2b8,0.9);
+sun.position.set(-20,30,-25);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-35,right:35,top:35,bottom:-35,near:1,far:120});
+scene.add(sun);
+const fill=new THREE.PointLight(0xffffff,0.35,60);fill.position.set(0,10,6);scene.add(fill);
+
+const mat=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.6,metalness:.1},o));
+function box(w,h,d,m,x,y,z,parent){const g=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);g.position.set(x,y,z);g.castShadow=true;g.receiveShadow=true;(parent||scene).add(g);return g}
+function cyl(rt,rb,h,m,x,y,z,parent,seg){const g=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||20),m);g.position.set(x,y,z);g.castShadow=true;g.receiveShadow=true;(parent||scene).add(g);return g}
+
+function canvasTex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');draw(x,w,h);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t}
+
+// floor with tile pattern
+const floorTex=canvasTex(512,512,(x,w,h)=>{x.fillStyle="#d6cfc2";x.fillRect(0,0,w,h);x.strokeStyle='#d3ccbf';x.lineWidth=3;
+  for(let i=0;i<=4;i++){x.beginPath();x.moveTo(i*128,0);x.lineTo(i*128,h);x.stroke();x.beginPath();x.moveTo(0,i*128);x.lineTo(w,i*128);x.stroke()}
+  x.fillStyle='rgba(180,151,90,.25)';x.fillRect(0,250,w,12)});
+floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping;floorTex.repeat.set(10,7);
+const FW=44,FD=28; // terminal size, glass wall at z=-FD/2
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(FW,FD),mat(0xffffff,{map:floorTex,roughness:.35}));
+floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+// carpet runner along desks
+const carpet=new THREE.Mesh(new THREE.PlaneGeometry(FW-6,5),mat(0x3b4148,{roughness:.9}));carpet.rotation.x=-Math.PI/2;carpet.position.set(0,0.01,1);carpet.receiveShadow=true;scene.add(carpet);
+
+// walls (side + back interior), low so camera sees in
+const wallM=mat(0xd9d4cb);
+box(0.4,5,FD,wallM,-FW/2,2.5,0);box(0.4,5,FD,wallM,FW/2,2.5,0);
+box(FW,1.2,0.4,mat(0xcfc8bb),0,0.6,FD/2);
+// gold ceiling beams
+box(FW,0.35,0.35,mat(GOLD,{metalness:.6,roughness:.35}),0,7.6,-FD/2+0.3); // gold header beam over the glass
+// columns
+[-18,-9,0,9,18].forEach(x=>cyl(0.35,0.35,7.4,mat(0xf4f1ea),x,3.7,-FD/2+0.6));
+
+// glass wall facing apron
+const glassM=new THREE.MeshPhysicalMaterial({color:0xbfe3f2,transparent:true,opacity:.22,roughness:.05,metalness:0,side:THREE.DoubleSide});
+const glass=new THREE.Mesh(new THREE.PlaneGeometry(FW,7.4),glassM);glass.position.set(0,3.7,-FD/2);scene.add(glass);
+for(let x=-FW/2;x<=FW/2+0.01;x+=4) box(0.12,7.4,0.12,mat(0x7a7f86,{metalness:.7}),x,3.7,-FD/2);
+box(FW,0.15,0.2,mat(0x7a7f86,{metalness:.7}),0,7.4,-FD/2);box(FW,0.15,0.2,mat(0x7a7f86,{metalness:.7}),0,0.08,-FD/2);
+
+// apron outside
+const apron=new THREE.Mesh(new THREE.PlaneGeometry(220,90),mat(0x8d8a84,{roughness:.95}));apron.rotation.x=-Math.PI/2;apron.position.set(0,-0.02,-FD/2-45);apron.receiveShadow=true;scene.add(apron);
+const sand=new THREE.Mesh(new THREE.PlaneGeometry(400,200),mat(0xd8b98a,{roughness:1}));sand.rotation.x=-Math.PI/2;sand.position.set(0,-0.05,-FD/2-90);scene.add(sand);
+// taxiway yellow lines + edge
+const lineM=new THREE.MeshBasicMaterial({color:0xf0c419});
+[-30,-48].forEach(z=>{const l=new THREE.Mesh(new THREE.PlaneGeometry(220,0.35),lineM);l.rotation.x=-Math.PI/2;l.position.set(0,0.01,z);scene.add(l)});
+for(let x=-100;x<100;x+=8){const d=new THREE.Mesh(new THREE.PlaneGeometry(3,0.2),new THREE.MeshBasicMaterial({color:0xffffff}));d.rotation.x=-Math.PI/2;d.position.set(x,0.01,-60);scene.add(d)}
+// control tower (stylised)
+cyl(1.2,1.6,22,mat(0xece7dd),-46,11,-75);cyl(4,2.5,3,mat(0x9ec9d8,{metalness:.3,roughness:.2}),-46,23,-75);cyl(4.3,4.3,0.6,mat(GOLD),-46,24.8,-75);
+// distant palms
+function palm(x,z){cyl(0.25,0.35,6,mat(0x8b6a43),x,3,z);for(let i=0;i<6;i++){const f=box(3.2,0.08,0.7,mat(0x4e7d3a),x,6,z);f.rotation.y=i*Math.PI/3;f.rotation.z=-0.35;f.position.x+=Math.cos(i*Math.PI/3)*1.3;f.position.z-=Math.sin(i*Math.PI/3)*1.3}}
+[-70,-55,40,58,75].forEach((x,i)=>palm(x,-85-(i%2)*6));
+
+// ---------- jets ----------
+function makeJet(){
+  const g=new THREE.Group();
+  const body=mat(0xd5d7da,{metalness:.35,roughness:.35}), gold=mat(GOLD,{metalness:.55,roughness:.3}), grey=mat(0x6e7277,{metalness:.4,roughness:.4});
+  const f=cyl(1.1,1.1,16,body,0,2.2,0,g,24);f.rotation.z=Math.PI/2;
+  const nose=new THREE.Mesh(new THREE.SphereGeometry(1.1,24,16,0,Math.PI*2,0,Math.PI/2),body);nose.rotation.z=-Math.PI/2;nose.position.set(8,2.2,0);nose.scale.set(1,1.8,1);g.add(nose);
+  const tailc=cyl(1.1,0.3,4,body,-10,2.5,0,g,24);tailc.rotation.z=Math.PI/2;
+  const stripe=cyl(1.13,1.13,13,gold,-1,2.2,0,g,24);stripe.rotation.z=Math.PI/2;stripe.scale.set(1,1,1);stripe.material=gold;stripe.geometry=new THREE.CylinderGeometry(1.12,1.12,13,24,1,true,Math.PI*0.55,Math.PI*0.25);
+  // windows strip
+  const win=box(11,0.18,2.24,mat(0x2a3138),0.5,2.75,0,g);
+  const wing=box(4,0.18,15,grey,0,1.7,0,g);wing.rotation.y=0;wing.scale.set(1,1,1);
+  const fin=box(3,4,0.22,gold,-10.8,4.6,0,g);fin.rotation.z=-0.35;
+  const hstab=box(2,0.15,6,grey,-11,2.8,0,g);
+  [-3.6,3.6].forEach(z=>{const e=cyl(0.6,0.6,2.4,grey,0.6,1.05,z,g,16);e.rotation.z=Math.PI/2;});
+  [[6,0],[-1,1.6],[-1,-1.6]].forEach(([x,z])=>cyl(0.09,0.09,1.1,grey,x,0.6,z,g,8));
+  g.traverse(o=>{if(o.isMesh)o.castShadow=true});
+  return g;
+}
+const jets=[];
+[{z:-30,speed:4,x:-60,dir:1},{z:-48,speed:6,x:40,dir:-1},{z:-60,speed:14,x:-90,dir:1}].forEach(j=>{
+  const m=makeJet();m.position.set(j.x,0,j.z);m.rotation.y=j.dir>0?0:Math.PI;scene.add(m);jets.push(Object.assign(j,{mesh:m}));
+});
+
+// ---------- zones ----------
+const ZONES={};
+// Dilmun meeting room (left)
+(function(){
+  const cx=-15,cz=7;
+  const gm=new THREE.MeshPhysicalMaterial({color:0xcfe8f0,transparent:true,opacity:.25,side:THREE.DoubleSide});
+  const w1=new THREE.Mesh(new THREE.PlaneGeometry(10,3.2),gm);w1.position.set(cx,1.6,cz-4);scene.add(w1);
+  const w2=new THREE.Mesh(new THREE.PlaneGeometry(8,3.2),gm);w2.rotation.y=Math.PI/2;w2.position.set(cx+5,1.6,cz);scene.add(w2);
+  box(10,0.12,0.12,mat(GOLD),cx,3.2,cz-4);box(0.12,0.12,8,mat(GOLD),cx+5,3.2,cz);
+  cyl(2,2,0.12,mat(0x6b4f35,{roughness:.4}),cx,1.05,cz,null,32);cyl(0.25,0.4,1,mat(0x333),cx,0.5,cz);
+  const seats=[];for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const x=cx+Math.cos(a)*3,z=cz+Math.sin(a)*3;box(0.8,0.5,0.8,mat(0x3b4148),x,0.45,z);seats.push({x,z,face:Math.atan2(cx-x,cz-z)})}
+  label3D('DILMUN MEETING ROOM',cx,3.8,cz-4,6,0.8);
+  ZONES.meeting={name:'Dilmun meeting room',spots:seats};
+})();
+// Departures board (right wall)
+let fidsTex=null,fidsCanvas=null;
+(function(){
+  fidsCanvas=document.createElement('canvas');fidsCanvas.width=1024;fidsCanvas.height=576;
+  fidsTex=new THREE.CanvasTexture(fidsCanvas);fidsTex.encoding=THREE.sRGBEncoding;
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(8,4.5),new THREE.MeshBasicMaterial({map:fidsTex}));
+  scr.rotation.y=-Math.PI/2;scr.position.set(FW/2-0.3,3.6,-2);scene.add(scr);
+  box(0.3,4.9,8.4,mat(0x222),FW/2-0.1,3.6,-2);
+  const spots=[{x:FW/2-4,z:-3.5},{x:FW/2-4.5,z:-1.5},{x:FW/2-4,z:0.5},{x:FW/2-5,z:-2.5}].map(s=>Object.assign(s,{face:Math.PI/2}));
+  ZONES.board={name:'departures board',spots};
+})();
+// Karak tea corner (front right)
+(function(){
+  const cx=16,cz=10;
+  box(6,1.1,1.4,mat(0x7a5634,{roughness:.5}),cx,0.55,cz);box(6.2,0.1,1.6,mat(GOLD,{metalness:.5}),cx,1.15,cz);
+  const pot=cyl(0.35,0.45,0.6,mat(0xc9a35a,{metalness:.8,roughness:.25}),cx-1.5,1.5,cz);
+  cyl(0.06,0.06,0.5,mat(0xc9a35a,{metalness:.8}),cx-1.05,1.6,cz).rotation.z=-0.9;
+  for(let i=0;i<4;i++) cyl(0.12,0.09,0.2,mat(0xffffff),cx+i*0.5,1.3,cz);
+  box(1.2,1.6,0.9,mat(0x3d4148),cx+2.2,1.95,cz); // urn
+  label3D('KARAK TEA CORNER',cx,2.9,cz-0.8,4.5,0.7);
+  const spots=[{x:cx-2,z:cz-1.6},{x:cx,z:cz-1.7},{x:cx+1.8,z:cz-1.6}].map(s=>Object.assign(s,{face:0}));
+  ZONES.tea={name:'karak tea corner',spots};
+})();
+
+function label3D(text,x,y,z,w,h,opts){
+  const o=opts||{};
+  const t=canvasTex(512,Math.round(512*h/w),(c,W,H)=>{c.fillStyle=o.bg||'rgba(29,33,38,.92)';roundRect(c,0,0,W,H,18);c.fill();
+    c.fillStyle=o.fg||'#B4975A';c.font='bold '+Math.round(H*0.5)+'px Segoe UI, Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(text,W/2,H/2+2)});
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true}));m.position.set(x,y,z);if(o.rotY)m.rotation.y=o.rotY;scene.add(m);return m;
+}
+function roundRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+
+// ---------- sprites for labels / bubbles ----------
+function textSprite(lines,opt){
+  const o=Object.assign({font:28,pad:18,bg:'rgba(255,255,255,.96)',fg:'#1d2126',border:'#B4975A',maxW:520,tail:false,bold:false},opt||{});
+  const c=document.createElement('canvas');const x=c.getContext('2d');
+  x.font=(o.bold?'bold ':'')+o.font+'px Segoe UI, Arial';
+  // wrap
+  const out=[];[].concat(lines).forEach(L=>{const words=String(L).split(' ');let cur='';words.forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>o.maxW&&cur){out.push(cur);cur=w}else cur=t});out.push(cur)});
+  const lines2=out.slice(0,o.maxLines||5);if(out.length>lines2.length)lines2[lines2.length-1]+='…';
+  const tw=Math.max(...lines2.map(l=>x.measureText(l).width));
+  const lh=o.font*1.25;const W=Math.ceil(tw+o.pad*2),H=Math.ceil(lines2.length*lh+o.pad*2+(o.tail?20:0));
+  c.width=W;c.height=H;x.font=(o.bold?'bold ':'')+o.font+'px Segoe UI, Arial';
+  const bh=H-(o.tail?20:0);
+  x.fillStyle=o.bg;roundRect(x,2,2,W-4,bh-4,16);x.fill();x.lineWidth=3;x.strokeStyle=o.border;x.stroke();
+  if(o.tail){x.beginPath();x.moveTo(W/2-14,bh-4);x.lineTo(W/2,H-2);x.lineTo(W/2+14,bh-4);x.closePath();x.fillStyle=o.bg;x.fill();x.strokeStyle=o.border;x.stroke();x.fillRect(W/2-12,bh-8,24,6)}
+  x.fillStyle=o.fg;x.textBaseline='top';lines2.forEach((l,i)=>x.fillText(l,o.pad,o.pad+i*lh));
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}));
+  const scale=o.scale||0.012;s.scale.set(W*scale,H*scale,1);s.renderOrder=10;s.center.set(0.5,0);return s;
+}
+
+// ---------- robot ----------
+function makeRobot(color){
+  const g=new THREE.Group();
+  const c=new THREE.Color(color);
+  const shell=mat(0xf3f3f1,{roughness:.35,metalness:.2}), accent=mat(c,{metalness:.5,roughness:.3});
+  const eyeM=new THREE.MeshBasicMaterial({color:0x7ff0ff});
+  const hip=new THREE.Group();g.add(hip);
+  const legL=box(0.28,0.8,0.28,accent,-0.22,0.4,0,g),legR=box(0.28,0.8,0.28,accent,0.22,0.4,0,g);
+  [legL,legR].forEach(l=>{l.geometry.translate(0,-0.4,0);l.position.y=0.8});
+  const torso=cyl(0.48,0.42,1.0,shell,0,1.35,0,g,20);
+  cyl(0.5,0.5,0.14,accent,0,1.6,0,g,20);
+  const tag=box(0.5,0.22,0.02,accent,0,1.3,0.45,g);
+  const head=new THREE.Group();head.position.set(0,2.15,0);g.add(head);
+  box(0.8,0.62,0.66,shell,0,0,0,head);
+  const visor=box(0.66,0.3,0.04,mat(0x14181c,{roughness:.2,metalness:.6}),0,0.02,0.34,head);
+  const eL=new THREE.Mesh(new THREE.SphereGeometry(0.06,10,10),eyeM);eL.position.set(-0.15,0.03,0.37);head.add(eL);
+  const eR=eL.clone();eR.position.x=0.15;head.add(eR);
+  cyl(0.02,0.02,0.35,accent,0,0.45,0,head,6);
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(0.08,10,10),new THREE.MeshBasicMaterial({color:0xffcc66}));bulb.position.set(0,0.65,0);head.add(bulb);
+  const armL=box(0.18,0.75,0.18,accent,-0.6,1.55,0,g),armR=box(0.18,0.75,0.18,accent,0.6,1.55,0,g);
+  [armL,armR].forEach(a=>{a.geometry.translate(0,-0.35,0);});
+  g.userData={legL,legR,armL,armR,head,eyeM,bulb,torso};
+  g.traverse(o=>{if(o.isMesh)o.castShadow=true});
+  return g;
+}
+
+// ---------- desks / bots from data ----------
+const botObjs=[];let selected=null;
+const deskGroup=new THREE.Group();scene.add(deskGroup);
+
+function makeDesk(x,z,gate,bot){
+  const g=new THREE.Group();g.position.set(x,0,z);deskGroup.add(g);
+  const wood=mat(0x5a4330,{roughness:.45}), top=mat(0xf6f3ec,{roughness:.3});
+  box(3.2,1.1,1.2,wood,0,0.55,0,g);box(3.4,0.08,1.4,top,0,1.14,0,g);
+  box(3.4,0.12,0.06,mat(GOLD,{metalness:.6}),0,0.9,0.71,g);
+  // monitor
+  const scrTex=canvasTex(256,160,(c,W,H)=>{c.fillStyle='#0f1a24';c.fillRect(0,0,W,H);c.fillStyle='#B4975A';c.font='bold 22px Consolas';c.fillText(bot.short||'BOT',14,32);c.fillStyle='#7fd6ff';c.font='14px Consolas';for(let i=0;i<6;i++)c.fillRect(14,50+i*16,40+((i*53)%150),6)});
+  const mon=new THREE.Mesh(new THREE.BoxGeometry(1.1,0.7,0.06),[mat(0x222),mat(0x222),mat(0x222),mat(0x222),new THREE.MeshBasicMaterial({map:scrTex}),mat(0x222)]);
+  mon.position.set(0,1.62,-0.35);mon.rotation.y=Math.PI;g.add(mon);
+  box(0.1,0.3,0.1,mat(0x333),0,1.3,-0.35,g);
+  box(0.8,0.04,0.3,mat(0x333),0,1.2,0.05,g);
+  // chair (behind desk, bot faces -z toward window? we put bot on +z side facing desk -> faces -z)
+  const chair=new THREE.Group();chair.position.set(0,0,1.5);g.add(chair);
+  cyl(0.45,0.45,0.12,mat(0x2b3036),0,0.62,0,chair);box(0.9,0.9,0.12,mat(0x2b3036),0,1.1,0.42,chair);cyl(0.06,0.06,0.55,mat(0x777),0,0.3,0,chair,8);
+  // gate sign
+  const sign=canvasTex(512,200,(c,W,H)=>{c.fillStyle='#1d2126';c.fillRect(0,0,W,H);c.fillStyle='#B4975A';c.fillRect(0,0,150,H);c.fillStyle='#1d2126';c.font='bold 90px Segoe UI, Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(gate,75,H/2);c.fillStyle='#fff';c.font='bold 40px Segoe UI, Arial';c.textAlign='left';
+    const n=bot.name;c.fillText(n.length>18?n.slice(0,17)+'…':n,170,70);c.fillStyle='#9aa1a9';c.font='30px Segoe UI, Arial';c.fillText('Gulf Air · BAH',170,135)});
+  const pole=cyl(0.06,0.06,3.4,mat(0x777,{metalness:.7}),-1.9,1.7,-0.4,g,8);
+  const sm=new THREE.Mesh(new THREE.PlaneGeometry(2.6,1.0),new THREE.MeshBasicMaterial({map:sign,side:THREE.DoubleSide}));sm.position.set(-1.9+1.3,3.2,-0.4);g.add(sm);
+  return {group:g,seat:{x:x,z:z+1.5,face:Math.PI}};
+}
+
+function buildBots(){
+  // clear
+  botObjs.forEach(b=>{scene.remove(b.robot)});botObjs.length=0;
+  while(deskGroup.children.length)deskGroup.remove(deskGroup.children[0]);
+  const bots=(DATA&&DATA.bots)||[];
+  const n=bots.length;const perRow=Math.min(Math.max(n,1),5);const spacing=6.5;
+  bots.forEach((b,i)=>{
+    const row=Math.floor(i/perRow),col=i%perRow;const inRow=Math.min(perRow,n-row*perRow);
+    const x=(col-(inRow-1)/2)*spacing, z=-1-row*5.5;
+    const gate='A'+(i+1);
+    const desk=makeDesk(x,z,gate,b);
+    const robot=makeRobot(b.color||(i%2?GREY:GOLD));
+    robot.position.set(desk.seat.x,0,desk.seat.z);robot.rotation.y=desk.seat.face;
+    scene.add(robot);
+    const status=deriveStatus(b);
+    const obj={bot:b,gate,desk,robot,status,state:'sit',target:null,timer:2+Math.random()*4,walkPhase:0,label:null,bubble:null,bubbleText:''};
+    robot.userData.botIndex=i;robot.traverse(o=>o.userData.botIndex=i);
+    setLabel(obj);setBubble(obj);
+    botObjs.push(obj);
+  });
+  drawFids();renderPanel();
+}
+function statusWord(s){return {active:'WORKING',idle:'IDLE',paused:'PAUSED',unknown:'UNKNOWN'}[s]||s.toUpperCase()}
+function statusColor(s){return {active:'#5fd38a',idle:'#e6c36a',paused:'#ef7f6b'}[s]||'#9aa1a9'}
+function setLabel(o){
+  if(o.label)o.robot.remove(o.label);
+  o.label=textSprite([o.bot.name+'  ·  '+statusWord(o.status)],{font:26,bg:'rgba(29,33,38,.9)',fg:'#ffffff',border:statusColor(o.status),scale:0.011,bold:true,maxW:700,maxLines:1});
+  o.label.position.set(0,3.0,0);o.robot.add(o.label);
+}
+function setBubble(o){
+  const text=o.bot.latest||(o.bot.activity&&o.bot.activity.length?o.bot.activity[o.bot.activity.length-1].summary:'No activity recorded');
+  const when=o.bot.lastActive?fmtTime(o.bot.lastActive):'';
+  if(o.bubble)o.robot.remove(o.bubble);
+  o.bubble=textSprite([(when?when+' · ':'')+text],{font:24,tail:true,scale:0.0105,maxW:430,maxLines:4});
+  o.bubble.position.set(0,3.45,0);o.robot.add(o.bubble);
+}
+
+// ---------- departures board texture ----------
+function drawFids(){
+  const c=fidsCanvas.getContext('2d'),W=fidsCanvas.width,H=fidsCanvas.height;
+  c.fillStyle='#0b0d10';c.fillRect(0,0,W,H);
+  c.fillStyle='#B4975A';c.fillRect(0,0,W,70);
+  c.fillStyle='#0b0d10';c.font='bold 40px Segoe UI, Arial';c.fillText('DEPARTURES  ·  BOT ACTIVITY',24,48);
+  c.textAlign='right';c.fillText(fmtTime(new Date().toISOString()),W-24,48);c.textAlign='left';
+  c.fillStyle='#9aa1a9';c.font='bold 24px Consolas, monospace';
+  c.fillText('TIME',24,110);c.fillText('GATE',120,110);c.fillText('BOT / LATEST',220,110);c.fillText('STATUS',840,110);
+  botObjs.forEach((o,i)=>{
+    const y=160+i*90;if(y>H-20)return;
+    c.fillStyle=i%2?'#14181d':'#101317';c.fillRect(12,y-38,W-24,82);
+    c.fillStyle='#ffd27a';c.font='bold 30px Consolas, monospace';c.fillText(o.bot.lastActive?fmtTime(o.bot.lastActive):'--:--',24,y);
+    c.fillText(o.gate,120,y);
+    c.fillStyle='#fff';c.font='bold 28px Segoe UI, Arial';c.fillText(o.bot.name.slice(0,34),220,y);
+    c.fillStyle='#aab';c.font='22px Segoe UI, Arial';let s=o.bot.statusText||'';if(s.length>48)s=s.slice(0,47)+'…';c.fillText(s,220,y+32);
+    c.fillStyle=statusColor(o.status);c.font='bold 28px Consolas, monospace';c.fillText(statusWord(o.status),840,y);
+  });
+  if(!botObjs.length){c.fillStyle='#9aa1a9';c.font='28px Segoe UI';c.fillText('No bots in data.json yet',24,170)}
+  fidsTex.needsUpdate=true;
+}
+
+// ---------- side panel ----------
+function renderPanel(){
+  const meta=document.getElementById('meta');
+  meta.textContent=(DATA.generatedAt?'Data refreshed '+fmtDate(DATA.generatedAt)+' (Baghdad time)':'')+' · '+botObjs.length+' bot'+(botObjs.length===1?'':'s');
+  const f=document.getElementById('fids');
+  f.innerHTML='<div class="row h"><span>LAST</span><span>GATE · BOT</span><span>STATUS</span></div>'+botObjs.map((o,i)=>
+    `<div class="row" data-i="${i}"><span>${o.bot.lastActive?fmtTime(o.bot.lastActive):'--:--'}</span><span>${esc(o.gate)} · ${esc(o.bot.name)}</span><span class="st ${o.status}">${statusWord(o.status)}</span></div>`).join('');
+  f.querySelectorAll('.row[data-i]').forEach(r=>r.onclick=()=>select(+r.dataset.i));
+  renderDetail();
+}
+function renderDetail(){
+  const d=document.getElementById('detail');
+  const o=selected!=null?botObjs[selected]:null;
+  if(!o){d.innerHTML='<p class="empty" style="margin-top:14px">Click a bot in the terminal or a row above to see its timeline and routines.</p>'+
+    '<div class="btns"><button id="tour">Overview camera</button></div>';document.getElementById('tour').onclick=overview;return}
+  const b=o.bot;const acts=(b.activity||[]).slice().reverse();
+  const rts=b.routines||[];
+  d.innerHTML=`<h3>${esc(b.name)} <span class="st ${o.status}" style="font-size:11px">${statusWord(o.status)}</span></h3>
+   <div class="role">${esc(b.role||'Role not recorded.')}</div>
+   <div class="role" style="margin-top:6px;color:var(--muted)">Gate ${esc(o.gate)} · last active ${b.lastActive?fmtDate(b.lastActive):'unknown'} · now: ${esc(b.statusText||'')}</div>
+   <div class="btns"><button id="ov">Overview camera</button><button id="fol">Follow bot</button></div>
+   <div class="sec">Routines</div>
+   ${rts.length?rts.map(r=>`<div class="rt"><b>${esc(r.name)}<span class="pill ${esc(r.state)}">${esc(r.state)}</span></b><span class="s">${esc(r.schedule)}</span><br>${esc(r.note||'')}</div>`).join(''):`<p class="empty">${esc(b.routinesNote||'No routines recorded.')}</p>`}
+   <div class="sec">Recent activity (Baghdad time)</div>
+   ${acts.length?'<ul class="tl">'+acts.map(a=>`<li><time>${fmtDate(a.time)}</time>${esc(a.summary)}</li>`).join('')+'</ul>':'<p class="empty">No activity recorded.</p>'}`;
+  document.getElementById('ov').onclick=overview;
+  document.getElementById('fol').onclick=()=>{follow=!follow};
+}
+
+// ---------- camera focus ----------
+let camTween=null,follow=false;
+function tweenCam(pos,target){camTween={fromP:camera.position.clone(),fromT:controls.target.clone(),toP:pos,toT:target,t:0}}
+function select(i){
+  selected=i;follow=false;renderDetail();
+  const o=botObjs[i];if(!o)return;
+  const p=o.robot.position;
+  tweenCam(new THREE.Vector3(p.x+3,5.5,p.z+8),new THREE.Vector3(p.x,1.8,p.z));
+  botObjs.forEach((b,j)=>{b.label.material.opacity=(j===i)?1:0.55});
+}
+function overview(){selected=null;follow=false;renderDetail();botObjs.forEach(b=>b.label.material.opacity=1);tweenCam(new THREE.Vector3(9,12,19),new THREE.Vector3(0,1.5,-3))}
+
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let downAt=null;
+renderer.domElement.addEventListener('pointerdown',e=>downAt=[e.clientX,e.clientY]);
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!downAt||Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>5)return;
+  const r=renderer.domElement.getBoundingClientRect();mouse.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(botObjs.map(b=>b.robot),true);
+  if(hits.length&&hits[0].object.userData.botIndex!=null)select(hits[0].object.userData.botIndex);
+});
+
+// ---------- behaviour ----------
+function pickTrip(o){
+  // paused bots stay seated; idle/active wander occasionally
+  if(o.status==='paused')return null;
+  const r=Math.random();
+  const zone=o.status==='active'?(r<0.5?'meeting':r<0.8?'board':'tea'):(r<0.4?'tea':r<0.75?'board':'meeting');
+  const spots=ZONES[zone].spots;const s=spots[(botObjs.indexOf(o)+Math.floor(Math.random()*spots.length))%spots.length];
+  return {x:s.x,z:s.z,face:s.face,zone};
+}
+function update(o,dt,t){
+  const R=o.robot,u=R.userData;
+  o.timer-=dt;
+  if(o.state==='sit'||o.state==='stay'){
+    R.position.y=o.state==='sit'?-0.25:0;
+    u.legL.rotation.x=u.legR.rotation.x=o.state==='sit'?-1.4:0;
+    const typing=o.state==='sit'&&o.status!=='paused';
+    u.armL.rotation.x=typing?-1.1+Math.sin(t*14)*0.12:0;u.armR.rotation.x=typing?-1.1+Math.cos(t*14)*0.12:0;
+    u.head.rotation.x=o.status==='paused'&&o.state==='sit'?0.35:Math.sin(t*1.3+R.id)*0.05;
+    if(o.timer<=0){
+      if(o.state==='sit'){const trip=pickTrip(o);if(trip){o.target=trip;o.state='walk';}else o.timer=5}
+      else{o.target={x:o.desk.seat.x,z:o.desk.seat.z,face:o.desk.seat.face,zone:'desk'};o.state='walk'}
+    }
+  }else if(o.state==='walk'){
+    R.position.y=0;u.legL.rotation.x=0;
+    const dx=o.target.x-R.position.x,dz=o.target.z-R.position.z,dist=Math.hypot(dx,dz);
+    if(dist<0.08){R.position.x=o.target.x;R.position.z=o.target.z;R.rotation.y=o.target.face;
+      o.state=o.target.zone==='desk'?'sit':'stay';o.timer=o.state==='sit'?10+Math.random()*14:5+Math.random()*6;
+      u.legL.rotation.x=u.legR.rotation.x=0;u.armL.rotation.x=u.armR.rotation.x=0;return}
+    const sp=Math.min(dist,2.2*dt);R.position.x+=dx/dist*sp;R.position.z+=dz/dist*sp;
+    const want=Math.atan2(dx,dz);let d=want-R.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));R.rotation.y+=d*Math.min(1,dt*8);
+    o.walkPhase+=dt*9;const s=Math.sin(o.walkPhase)*0.6;
+    u.legL.rotation.x=s;u.legR.rotation.x=-s;u.armL.rotation.x=-s*0.8;u.armR.rotation.x=s*0.8;R.position.y=Math.abs(Math.sin(o.walkPhase))*0.06;
+  }
+  u.bulb.material.color.setHex(o.status==='paused'?0xef7f6b:o.status==='active'?(Math.sin(t*6)>0?0x5fd38a:0x1f4d30):0xffcc66);
+  u.eyeM.color.setHex(o.status==='paused'&&o.state==='sit'?0x335560:0x7ff0ff);
+}
+
+// ---------- data refresh (http only) ----------
+function applyData(d){if(!d||!Array.isArray(d.bots))return;const sig=JSON.stringify(d);if(sig===applyData.last)return;applyData.last=sig;DATA=d;buildBots();if(selected!=null&&selected>=botObjs.length)selected=null;renderDetail()}
+applyData.last=JSON.stringify(DATA);
+function pull(){if(!/^https?:/.test(location.protocol))return;fetch('data.json?_='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(applyData).catch(()=>{})}
+
+// ---------- loop ----------
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+window.addEventListener('resize',resize);
+const clock=new THREE.Clock();let lastBoard=0;
+function tick(){
+  const dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
+  jets.forEach(j=>{j.mesh.position.x+=j.dir*j.speed*dt;if(j.dir>0&&j.mesh.position.x>110)j.mesh.position.x=-110;if(j.dir<0&&j.mesh.position.x<-110)j.mesh.position.x=110});
+  botObjs.forEach(o=>update(o,dt,t));
+  if(camTween){camTween.t=Math.min(1,camTween.t+dt*1.4);const k=1-Math.pow(1-camTween.t,3);camera.position.lerpVectors(camTween.fromP,camTween.toP,k);controls.target.lerpVectors(camTween.fromT,camTween.toT,k);if(camTween.t>=1)camTween=null}
+  else if(follow&&selected!=null){const p=botObjs[selected].robot.position;controls.target.lerp(new THREE.Vector3(p.x,1.8,p.z),0.08)}
+  if(t-lastBoard>30){lastBoard=t;drawFids()}
+  controls.update();renderer.render(scene,camera);requestAnimationFrame(tick);
+}
+function clockTick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB',{timeZone:TZ,hour:'2-digit',minute:'2-digit'})}
+setInterval(clockTick,15000);clockTick();
+resize();buildBots();renderDetail();tick();
+pull();setInterval(pull,60000);
+setInterval(()=>{botObjs.forEach(o=>{const s=deriveStatus(o.bot);if(s!==o.status){o.status=s;setLabel(o)}});renderPanel()},60000);
+window.__botOffice={get bots(){return botObjs.length},select,overview};
+})();
+</script>
+</body>
+</html>
