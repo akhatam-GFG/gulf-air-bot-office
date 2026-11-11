@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T12:50:00+03:00",
+  "generatedAt": "2026-11-11T16:00:00+03:00",
   "timezone": "Asia/Baghdad (UTC+3)",
   "source": "Summarised from each bot's own chat history. Scrubbed for publishing: no PNRs, routes, booking refs, passenger names, booking error codes, emails, URLs or other personal details.",
   "bots": [
@@ -124,6 +124,53 @@
           "schedule": "Every day around 8:00 AM (Asia/Baghdad)",
           "state": "paused",
           "note": "Emails one summary of the previous day's failures."
+        }
+      ],
+      "routinesNote": ""
+    },
+    {
+      "id": "ea578bb2-03ca-44d4-88f0-22201ffb2077",
+      "name": "Slack-Jira Bot",
+      "short": "SJB",
+      "color": "#2684FF",
+      "role": "Reads one team Slack channel and turns ticket-worthy discussions into ready-to-create Jira drafts for Ali to approve. It never posts or creates anything itself.",
+      "createdAt": "2026-11-11T15:30:00+03:00",
+      "lastActive": "2026-11-11T15:58:00+03:00",
+      "status": "idle",
+      "statusText": "Watching the Slack channel for new tickets",
+      "latest": "Drafted a new feature story for approval and added it to the drafts dashboard.",
+      "activity": [
+        {
+          "time": "2026-11-11T15:30:00+03:00",
+          "summary": "Got its assignment: read a Slack channel and draft Jira tickets for approval, never create them."
+        },
+        {
+          "time": "2026-11-11T15:44:00+03:00",
+          "summary": "Drafted its first ticket, a UI bug in the mobile app, and sent it for approval."
+        },
+        {
+          "time": "2026-11-11T15:49:00+03:00",
+          "summary": "Built a dashboard of Jira drafts waiting for approval."
+        },
+        {
+          "time": "2026-11-11T15:50:00+03:00",
+          "summary": "Ali asked for all drafts to go to the Gulf Air Flutter project; routine updated."
+        },
+        {
+          "time": "2026-11-11T15:52:00+03:00",
+          "summary": "Simplified the drafts dashboard into one card per draft."
+        },
+        {
+          "time": "2026-11-11T15:58:00+03:00",
+          "summary": "Drafted a new feature story from the channel and added it to the dashboard."
+        }
+      ],
+      "routines": [
+        {
+          "name": "Slack channel to Jira draft",
+          "schedule": "On every new message in the channel",
+          "state": "enabled",
+          "note": "Read-only: drafts tickets for Ali to review and create."
         }
       ],
       "routinesNote": ""
