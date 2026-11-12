@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T16:00:00+03:00",
+  "generatedAt": "2026-11-12T08:15:00+03:00",
   "timezone": "Asia/Baghdad (UTC+3)",
   "source": "Summarised from each bot's own chat history. Scrubbed for publishing: no PNRs, routes, booking refs, passenger names, booking error codes, emails, URLs or other personal details.",
   "bots": [
@@ -174,6 +174,34 @@
         }
       ],
       "routinesNote": ""
+    },
+    {
+      "id": "f9748984-690b-4dad-aa8b-ee7e8c655e44",
+      "name": "Website translator",
+      "short": "WT",
+      "color": "#D9534F",
+      "role": "Checks the Gulf Air website's Chinese version against the English original for untranslated, missing, or wrongly translated text, and builds an Excel comparison report.",
+      "createdAt": "2026-11-12T08:09:00+03:00",
+      "lastActive": "2026-11-12T08:12:00+03:00",
+      "status": "active",
+      "statusText": "Scanning the English and Chinese site screen by screen",
+      "latest": "On it. Crawling the site in English and Chinese and comparing them page by page for an Excel report.",
+      "activity": [
+        {
+          "time": "2026-11-12T08:09:00+03:00",
+          "summary": "First run: greeted Ali and asked what kind of translation help he needs."
+        },
+        {
+          "time": "2026-11-12T08:12:00+03:00",
+          "summary": "Ali asked for a full English vs Chinese comparison of the Gulf Air website, delivered as an Excel report."
+        },
+        {
+          "time": "2026-11-12T08:12:00+03:00",
+          "summary": "Started crawling both language versions to compare every screen."
+        }
+      ],
+      "routines": [],
+      "routinesNote": "No routines found in this bot's transcript."
     }
   ]
 }
